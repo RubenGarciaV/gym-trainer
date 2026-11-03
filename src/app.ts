@@ -5,6 +5,7 @@ import { toNodeHandler } from 'better-auth/node';
 import { frameguard, hidePoweredBy, noSniff, referrerPolicy } from 'helmet';
 import { auth } from './auth.js';
 import { getPrismaClient } from './db/prisma.js';
+import { fitnessRouter } from './routes/fitness.js';
 
 const app = express();
 const allowedOrigins = new Set(
@@ -27,6 +28,7 @@ app.use(
 
 app.all('/api/auth/*splat', toNodeHandler(auth));
 app.use(express.json({ limit: '1mb' }));
+app.use('/api/v1', fitnessRouter);
 
 app.get('/api/v1/health', (_request, response) => {
   response.status(200).json({ status: 'ok' });

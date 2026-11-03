@@ -32,6 +32,18 @@ describe('Gym Trainer API', () => {
     assert.equal(response.headers['access-control-allow-credentials'], 'true');
   });
 
+  it('requires a valid session for fitness data', async () => {
+    const response = await request(app).get('/api/v1/routines');
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(response.body, {
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'A valid session is required.',
+      },
+    });
+  });
+
   it('returns a consistent response for unknown routes', async () => {
     const response = await request(app).get('/api/v1/unknown');
 

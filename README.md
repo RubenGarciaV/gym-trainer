@@ -28,13 +28,29 @@ Set `CORS_ORIGINS` to a comma-separated list of trusted UI origins. Local Vite (
 ## Database commands
 
 - `npm run db:generate` — generate the Prisma Client.
+- `npm run db:seed` — add or update the shared Spanish exercise catalog.
 - `npm run db:push` — push the current schema to the database (development only).
 - `npm run db:migrate` — create and apply a development migration.
 - `npm run db:deploy` — apply committed migrations in deployment environments.
 
-Better Auth's user, account, session, and rate-limit models are in the Prisma schema. Add domain models as the UI's data requirements are defined. Use the direct `DATABASE_URL` for Prisma CLI commands and migrations, and the pooled `DATABASE_URL_POOLED` for runtime traffic.
+Better Auth's user, account, session, and rate-limit models, as well as the fitness models, are in the Prisma schema. Use the direct `DATABASE_URL` for Prisma CLI commands and migrations, and the pooled `DATABASE_URL_POOLED` for runtime traffic.
+
+## Fitness API
+
+All fitness data endpoints under `/api/v1` require a valid Better Auth session cookie; the health endpoints do not.
+
+- `GET /api/v1/exercises?muscleGroup=CHEST&q=press` — filter the shared exercise catalog by `CHEST`, `BACK`, `BICEPS`, `LEGS`, or `SHOULDERS`, and optionally by name.
+- `GET|POST /api/v1/routines` — list or create the current user's routines. A routine has an ordered list of `exercises`, each with `exerciseId`, `position`, `sets`, `reps`, `weightKg`, and `restSeconds`.
+- `GET|PATCH|DELETE /api/v1/routines/:id` — read, update, or delete an owned routine. `PATCH` replaces the exercise list when `exercises` is supplied.
+- `GET|POST /api/v1/weight-entries` — list or record body weight in kilograms.
+- `PATCH|DELETE /api/v1/weight-entries/:id` — update or delete an owned measurement.
+- `GET|POST /api/v1/workouts` — list or record a completed workout, with an ordered exercise snapshot and each performed set's `reps` and `weightKg`.
+- `GET|DELETE /api/v1/workouts/:id` — read or delete an owned workout record.
+
+Workout history keeps exercise names and performed sets as snapshots, so it remains useful if a routine or exercise catalog entry changes. Measurements and routines belong to their user and cannot be read or changed by other users. Run `npm run db:seed` to populate the shared exercise catalog.
 
 ## Validation
 
 - `npm test`
+- `npm run test:integration` (requires a linked local Prisma Postgres database)
 - `npm run build`
