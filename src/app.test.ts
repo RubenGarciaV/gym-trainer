@@ -11,6 +11,27 @@ describe('Gym Trainer API', () => {
     assert.deepEqual(response.body, { status: 'ok' });
   });
 
+  it('exposes the Better Auth health endpoint', async () => {
+    const response = await request(app).get('/api/auth/ok');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, { ok: true });
+  });
+
+  it('allows credentialed requests from configured UI origins', async () => {
+    const response = await request(app)
+      .options('/api/auth/sign-in/email')
+      .set('Origin', 'http://localhost:5173')
+      .set('Access-Control-Request-Method', 'POST');
+
+    assert.equal(response.status, 204);
+    assert.equal(
+      response.headers['access-control-allow-origin'],
+      'http://localhost:5173',
+    );
+    assert.equal(response.headers['access-control-allow-credentials'], 'true');
+  });
+
   it('returns a consistent response for unknown routes', async () => {
     const response = await request(app).get('/api/v1/unknown');
 
