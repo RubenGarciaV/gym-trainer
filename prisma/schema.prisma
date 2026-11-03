@@ -132,15 +132,24 @@ model RoutineExercise {
   routineId   String
   exerciseId  String
   position    Int
-  sets        Int
-  reps        Int
-  weightKg    Decimal? @db.Decimal(7, 2)
   restSeconds Int
   routine     Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  sets        RoutineSet[]
 
   @@unique([routineId, position])
   @@index([exerciseId])
+}
+
+model RoutineSet {
+  id                String          @id @default(cuid())
+  routineExerciseId String
+  setNumber         Int
+  reps              Int
+  weightKg          Decimal?        @db.Decimal(7, 2)
+  routineExercise   RoutineExercise @relation(fields: [routineExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([routineExerciseId, setNumber])
 }
 
 model BodyWeightEntry {

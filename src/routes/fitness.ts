@@ -24,12 +24,16 @@ const idSchema = z.string().trim().min(1).max(128);
 const nameSchema = z.string().trim().min(1).max(100);
 const weightSchema = z.number().finite().min(0).max(99999.99);
 
+const routineSetSchema = z.object({
+  setNumber: z.number().int().min(1).max(100),
+  reps: z.number().int().min(1).max(1000),
+  weightKg: weightSchema.nullable().optional(),
+});
+
 const routineExerciseSchema = z.object({
   exerciseId: idSchema,
   position: z.number().int().min(0).max(1000),
-  sets: z.number().int().min(1).max(100),
-  reps: z.number().int().min(1).max(1000),
-  weightKg: weightSchema.nullable().optional(),
+  sets: z.array(routineSetSchema).min(1).max(100),
   restSeconds: z.number().int().min(0).max(3600),
 });
 
@@ -136,6 +140,26 @@ function validatePositions(
   return false;
 }
 
+function validateSetNumbers(
+  exercises: Array<{ sets: Array<{ setNumber: number }> }>,
+  response: Response,
+): boolean {
+  for (const exercise of exercises) {
+    const setNumbers = exercise.sets.map(({ setNumber }) => setNumber);
+    if (new Set(setNumbers).size === setNumbers.length) continue;
+
+    response.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Set numbers must be unique within each exercise.',
+      },
+    });
+    return false;
+  }
+
+  return true;
+}
+
 function decimalToNumber(value: Prisma.Decimal | null): number | null {
   return value === null ? null : Number(value);
 }
@@ -170,7 +194,7 @@ async function validateExerciseIds(
 
 function mapRoutine<T extends {
   exercises: Array<{
-    weightKg: Prisma.Decimal | null;
+    sets: Array<{ weightKg: Prisma.Decimal | null }>;
     exercise: { muscleGroups: Array<{ muscleGroup: MuscleGroup }> };
   }>;
 }>(routine: T) {
@@ -178,7 +202,10 @@ function mapRoutine<T extends {
     ...routine,
     exercises: routine.exercises.map((exercise) => ({
       ...exercise,
-      weightKg: decimalToNumber(exercise.weightKg),
+      sets: exercise.sets.map((set) => ({
+        ...set,
+        weightKg: decimalToNumber(set.weightKg),
+      })),
       exercise: {
         ...exercise.exercise,
         muscleGroups: exercise.exercise.muscleGroups.map(
@@ -237,6 +264,7 @@ fitnessRouter.get('/routines', async (_request, response) => {
     include: {
       exercises: {
         include: {
+          sets: { orderBy: { setNumber: 'asc' } },
           exercise: {
             include: { muscleGroups: { select: { muscleGroup: true } } },
           },
@@ -254,6 +282,7 @@ fitnessRouter.post('/routines', async (request, response) => {
   const body = parseBody(routineCreateSchema, request, response);
   if (!body) return;
   if (!validatePositions(body.exercises, response)) return;
+  if (!validateSetNumbers(body.exercises, response)) return;
   if (!(await validateExerciseIds(body.exercises, response))) return;
 
   const routine = await prisma.routine.create({
@@ -261,18 +290,22 @@ fitnessRouter.post('/routines', async (request, response) => {
       userId: response.locals.userId,
       name: body.name,
       exercises: {
-        create: body.exercises.map((exercise) => ({
+        create: body.exercises.map(({ sets, ...exercise }) => ({
           ...exercise,
-          weightKg:
-            exercise.weightKg == null
-              ? null
-              : new Prisma.Decimal(exercise.weightKg),
+          sets: {
+            create: sets.map((set) => ({
+              ...set,
+              weightKg:
+                set.weightKg == null ? null : new Prisma.Decimal(set.weightKg),
+            })),
+          },
         })),
       },
     },
     include: {
       exercises: {
         include: {
+          sets: { orderBy: { setNumber: 'asc' } },
           exercise: {
             include: { muscleGroups: { select: { muscleGroup: true } } },
           },
@@ -294,6 +327,7 @@ fitnessRouter.get('/routines/:id', async (request, response) => {
     include: {
       exercises: {
         include: {
+          sets: { orderBy: { setNumber: 'asc' } },
           exercise: {
             include: { muscleGroups: { select: { muscleGroup: true } } },
           },
@@ -319,6 +353,7 @@ fitnessRouter.patch('/routines/:id', async (request, response) => {
   const body = parseBody(routineUpdateSchema, request, response);
   if (!body) return;
   if (body.exercises && !validatePositions(body.exercises, response)) return;
+  if (body.exercises && !validateSetNumbers(body.exercises, response)) return;
   if (body.exercises && !(await validateExerciseIds(body.exercises, response))) {
     return;
   }
@@ -341,12 +376,15 @@ fitnessRouter.patch('/routines/:id', async (request, response) => {
       ...(body.exercises !== undefined && {
         exercises: {
           deleteMany: {},
-          create: body.exercises.map((exercise) => ({
+          create: body.exercises.map(({ sets, ...exercise }) => ({
             ...exercise,
-            weightKg:
-              exercise.weightKg == null
-                ? null
-                : new Prisma.Decimal(exercise.weightKg),
+            sets: {
+              create: sets.map((set) => ({
+                ...set,
+                weightKg:
+                  set.weightKg == null ? null : new Prisma.Decimal(set.weightKg),
+              })),
+            },
           })),
         },
       }),
@@ -354,6 +392,7 @@ fitnessRouter.patch('/routines/:id', async (request, response) => {
     include: {
       exercises: {
         include: {
+          sets: { orderBy: { setNumber: 'asc' } },
           exercise: {
             include: { muscleGroups: { select: { muscleGroup: true } } },
           },
@@ -485,19 +524,7 @@ fitnessRouter.post('/workouts', async (request, response) => {
   if (!body) return;
 
   if (!validatePositions(body.exercises, response)) return;
-
-  for (const exercise of body.exercises) {
-    const setNumbers = exercise.sets.map(({ setNumber }) => setNumber);
-    if (new Set(setNumbers).size !== setNumbers.length) {
-      response.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Set numbers must be unique within each exercise.',
-        },
-      });
-      return;
-    }
-  }
+  if (!validateSetNumbers(body.exercises, response)) return;
 
   const routine =
     body.routineId == null

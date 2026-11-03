@@ -73,16 +73,73 @@ describe('Fitness API integration', () => {
         {
           exerciseId: exercise.id,
           position: 0,
-          sets: 3,
-          reps: 10,
-          weightKg: 20,
+          sets: [
+            { setNumber: 1, reps: 10, weightKg: 20 },
+            { setNumber: 2, reps: 8, weightKg: 22.5 },
+            { setNumber: 3, reps: 6, weightKg: 25 },
+          ],
           restSeconds: 90,
         },
       ],
     });
     assert.equal(routineResponse.status, 201);
     const routineId = routineResponse.body.id as string;
-    assert.equal(routineResponse.body.exercises[0].weightKg, 20);
+    assert.deepEqual(
+      routineResponse.body.exercises[0].sets.map(
+        (set: { setNumber: number; reps: number; weightKg: number }) => ({
+          setNumber: set.setNumber,
+          reps: set.reps,
+          weightKg: set.weightKg,
+        }),
+      ),
+      [
+        { setNumber: 1, reps: 10, weightKg: 20 },
+        { setNumber: 2, reps: 8, weightKg: 22.5 },
+        { setNumber: 3, reps: 6, weightKg: 25 },
+      ],
+    );
+    assert.equal(
+      (await owner.get(`/api/v1/routines/${routineId}`)).body.exercises[0].sets[1]
+        .weightKg,
+      22.5,
+    );
+    assert.equal(
+      (
+        await owner.patch(`/api/v1/routines/${routineId}`).send({
+          exercises: [
+            {
+              exerciseId: exercise.id,
+              position: 0,
+              sets: [
+                { setNumber: 1, reps: 12, weightKg: 17.5 },
+                { setNumber: 2, reps: 10, weightKg: 20 },
+              ],
+              restSeconds: 60,
+            },
+          ],
+        })
+      ).body.exercises[0].sets[1].reps,
+      10,
+    );
+    assert.equal(
+      (
+        await owner.post('/api/v1/routines').send({
+          name: 'Rutina con series duplicadas',
+          exercises: [
+            {
+              exerciseId: exercise.id,
+              position: 0,
+              sets: [
+                { setNumber: 1, reps: 10, weightKg: 20 },
+                { setNumber: 1, reps: 8, weightKg: 22.5 },
+              ],
+              restSeconds: 90,
+            },
+          ],
+        })
+      ).status,
+      400,
+    );
     assert.equal((await other.get(`/api/v1/routines/${routineId}`)).status, 404);
     assert.equal(
       (
