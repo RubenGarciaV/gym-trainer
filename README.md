@@ -39,7 +39,7 @@ Better Auth's user, account, session, and rate-limit models, as well as the fitn
 
 All fitness data endpoints under `/api/v1` require a valid Better Auth session cookie; the health endpoints do not.
 
-- `GET /api/v1/exercises?muscleGroup=CHEST&q=press` — filter the shared exercise catalog by `CHEST`, `BACK`, `BICEPS`, `LEGS`, or `SHOULDERS`, and optionally by name.
+- `GET /api/v1/exercises?muscleGroup=CHEST&q=press` — filter the shared exercise catalog by `CHEST`, `BACK`, `BICEPS`, `TRICEPS`, `LEGS`, `GLUTES`, `CORE`, or `SHOULDERS`, and optionally by name.
 - `GET|POST /api/v1/routines` — list or create the current user's routines. A routine has an ordered list of `exercises`, each with `exerciseId`, `position`, `restSeconds`, and a `sets` array. Each set has its own `setNumber`, `reps`, and optional nullable `weightKg`.
 - `GET|PATCH|DELETE /api/v1/routines/:id` — read, update, or delete an owned routine. `PATCH` replaces the exercise list when `exercises` is supplied.
 - `GET|POST /api/v1/weight-entries` — list or record body weight in kilograms.

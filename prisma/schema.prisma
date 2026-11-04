@@ -87,7 +87,10 @@ enum MuscleGroup {
   CHEST
   BACK
   BICEPS
+  TRICEPS
   LEGS
+  GLUTES
+  CORE
   SHOULDERS
 }
 
