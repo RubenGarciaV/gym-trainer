@@ -21,7 +21,7 @@ The app loads `.env.local` and `.env` for local development. Do not commit eithe
 - `GET /api/auth/get-session` — returns the current session.
 - `POST /api/auth/sign-out` — ends the current session.
 
-Better Auth stores users, password hashes, sessions, and persistent rate-limit data in Prisma Postgres. Passwords are never stored in plaintext: the `account.password` field contains a hash. Browser requests from the UI must send credentials (for example, `fetch(url, { credentials: 'include' })`). The API is on a different Vercel origin, so auth cookies use `SameSite=None; Secure` in production. Browsers that block third-party cookies may require the UI and API to share a custom domain or use a same-origin proxy.
+Better Auth stores users, password hashes, sessions, and persistent rate-limit data in Prisma Postgres. Passwords are never stored in plaintext: the `account.password` field contains a hash. Browser requests from the UI must send credentials (for example, `fetch(url, { credentials: 'include' })`). Auth cookies use `SameSite=None; Secure` in production for direct cross-origin clients. The UI's Vercel deployment proxies its API requests through a same-origin function so mobile browsers that block third-party cookies can retain the session.
 
 Set `CORS_ORIGINS` to a comma-separated list of trusted UI origins. Local Vite (`http://localhost:5173`) and Create React App (`http://localhost:3000`) are allowed by default. `BETTER_AUTH_URL` is the API base URL, and `BETTER_AUTH_SECRET` must be a high-entropy secret of at least 32 characters. Keep its value out of source control.
 
