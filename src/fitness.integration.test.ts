@@ -169,6 +169,62 @@ describe('Fitness API integration', () => {
       weightHistory.body.some((entry: { id: string }) => entry.id === weightId),
     );
 
+    const bodyMeasurementResponse = await owner
+      .post('/api/v1/body-measurements')
+      .send({
+        chestCm: 98.5,
+        waistCm: 82,
+        hipCm: 101,
+        armCm: 34.5,
+        thighCm: 58,
+        calfCm: 37,
+      });
+    assert.equal(bodyMeasurementResponse.status, 201);
+    assert.deepEqual(
+      {
+        chestCm: bodyMeasurementResponse.body.chestCm,
+        waistCm: bodyMeasurementResponse.body.waistCm,
+        hipCm: bodyMeasurementResponse.body.hipCm,
+        armCm: bodyMeasurementResponse.body.armCm,
+        thighCm: bodyMeasurementResponse.body.thighCm,
+        calfCm: bodyMeasurementResponse.body.calfCm,
+      },
+      {
+        chestCm: 98.5,
+        waistCm: 82,
+        hipCm: 101,
+        armCm: 34.5,
+        thighCm: 58,
+        calfCm: 37,
+      },
+    );
+    const measurementId = bodyMeasurementResponse.body.id as string;
+    const bodyMeasurementHistory = await owner.get('/api/v1/body-measurements');
+    assert.ok(
+      bodyMeasurementHistory.body.some(
+        (entry: { id: string }) => entry.id === measurementId,
+      ),
+    );
+    assert.ok(
+      bodyMeasurementHistory.body.every(
+        (entry: { userId: string }) => entry.userId === userIds[0],
+      ),
+    );
+    assert.equal(
+      (await other.get('/api/v1/body-measurements')).body.some(
+        (entry: { id: string }) => entry.id === measurementId,
+      ),
+      false,
+    );
+    assert.equal(
+      (
+        await owner.post('/api/v1/body-measurements').send({
+          measuredAt: '2026-11-08T00:00:00Z',
+        })
+      ).status,
+      400,
+    );
+
     const workoutResponse = await owner.post('/api/v1/workouts').send({
       name: 'Entrenamiento de integración',
       routineId,

@@ -12,6 +12,7 @@ fitnessRouter.use(
     '/routines/:id',
     '/weight-entries',
     '/weight-entries/:id',
+    '/body-measurements',
     '/workouts',
     '/workouts/:id',
   ],
@@ -64,6 +65,25 @@ const bodyWeightUpdateSchema = z
   .refine((value) => value.weightKg !== undefined || value.measuredAt !== undefined, {
     message: 'At least one field must be provided.',
   });
+
+const measurementSchema = z.number().finite().min(0.01).max(999.99);
+const bodyMeasurementCreateSchema = z
+  .object({
+    chestCm: measurementSchema.optional(),
+    waistCm: measurementSchema.optional(),
+    hipCm: measurementSchema.optional(),
+    armCm: measurementSchema.optional(),
+    thighCm: measurementSchema.optional(),
+    calfCm: measurementSchema.optional(),
+    measuredAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .refine(
+    ({ chestCm, waistCm, hipCm, armCm, thighCm, calfCm }) =>
+      [chestCm, waistCm, hipCm, armCm, thighCm, calfCm].some(
+        (measurement) => measurement !== undefined,
+      ),
+    { message: 'At least one body measurement must be provided.' },
+  );
 
 const workoutSetSchema = z.object({
   setNumber: z.number().int().min(1).max(100),
@@ -489,6 +509,57 @@ fitnessRouter.delete('/weight-entries/:id', async (request, response) => {
   }
 
   response.status(204).end();
+});
+
+fitnessRouter.get('/body-measurements', async (_request, response) => {
+  const entries = await prisma.bodyMeasurementEntry.findMany({
+    where: { userId: response.locals.userId },
+    orderBy: { measuredAt: 'desc' },
+  });
+  response.json(
+    entries.map((entry) => ({
+      ...entry,
+      chestCm: decimalToNumber(entry.chestCm),
+      waistCm: decimalToNumber(entry.waistCm),
+      hipCm: decimalToNumber(entry.hipCm),
+      armCm: decimalToNumber(entry.armCm),
+      thighCm: decimalToNumber(entry.thighCm),
+      calfCm: decimalToNumber(entry.calfCm),
+    })),
+  );
+});
+
+fitnessRouter.post('/body-measurements', async (request, response) => {
+  const body = parseBody(bodyMeasurementCreateSchema, request, response);
+  if (!body) return;
+
+  const entry = await prisma.bodyMeasurementEntry.create({
+    data: {
+      userId: response.locals.userId,
+      ...(body.chestCm !== undefined && {
+        chestCm: new Prisma.Decimal(body.chestCm),
+      }),
+      ...(body.waistCm !== undefined && {
+        waistCm: new Prisma.Decimal(body.waistCm),
+      }),
+      ...(body.hipCm !== undefined && { hipCm: new Prisma.Decimal(body.hipCm) }),
+      ...(body.armCm !== undefined && { armCm: new Prisma.Decimal(body.armCm) }),
+      ...(body.thighCm !== undefined && {
+        thighCm: new Prisma.Decimal(body.thighCm),
+      }),
+      ...(body.calfCm !== undefined && { calfCm: new Prisma.Decimal(body.calfCm) }),
+      ...(body.measuredAt && { measuredAt: new Date(body.measuredAt) }),
+    },
+  });
+  response.status(201).json({
+    ...entry,
+    chestCm: decimalToNumber(entry.chestCm),
+    waistCm: decimalToNumber(entry.waistCm),
+    hipCm: decimalToNumber(entry.hipCm),
+    armCm: decimalToNumber(entry.armCm),
+    thighCm: decimalToNumber(entry.thighCm),
+    calfCm: decimalToNumber(entry.calfCm),
+  });
 });
 
 fitnessRouter.get('/workouts', async (_request, response) => {

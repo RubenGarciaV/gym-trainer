@@ -19,6 +19,7 @@ model User {
   accounts          Account[]
   routines          Routine[]
   bodyWeightEntries BodyWeightEntry[]
+  bodyMeasurements  BodyMeasurementEntry[]
   workouts          Workout[]
 
   @@unique([email])
@@ -162,6 +163,22 @@ model BodyWeightEntry {
   measuredAt DateTime @default(now())
   createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, measuredAt])
+}
+
+model BodyMeasurementEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  chestCm      Decimal? @db.Decimal(6, 2)
+  waistCm      Decimal? @db.Decimal(6, 2)
+  hipCm        Decimal? @db.Decimal(6, 2)
+  armCm        Decimal? @db.Decimal(6, 2)
+  thighCm      Decimal? @db.Decimal(6, 2)
+  calfCm       Decimal? @db.Decimal(6, 2)
+  measuredAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, measuredAt])
 }

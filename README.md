@@ -44,6 +44,7 @@ All fitness data endpoints under `/api/v1` require a valid Better Auth session c
 - `GET|PATCH|DELETE /api/v1/routines/:id` — read, update, or delete an owned routine. `PATCH` replaces the exercise list when `exercises` is supplied.
 - `GET|POST /api/v1/weight-entries` — list or record body weight in kilograms.
 - `PATCH|DELETE /api/v1/weight-entries/:id` — update or delete an owned measurement.
+- `GET|POST /api/v1/body-measurements` — list or record body measurements in centimeters (`chestCm`, `waistCm`, `hipCm`, `armCm`, `thighCm`, `calfCm`). Provide at least one measurement when creating a record; `measuredAt` is optional.
 - `GET|POST /api/v1/workouts` — list or record a completed workout, with an ordered exercise snapshot and each performed set's `reps` and `weightKg`.
 - `GET|DELETE /api/v1/workouts/:id` — read or delete an owned workout record.
 
