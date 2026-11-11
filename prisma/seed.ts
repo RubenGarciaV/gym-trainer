@@ -1,11 +1,12 @@
 import '../src/env.js';
-import { MuscleGroup } from '../src/generated/prisma/client.js';
+import { ExerciseCategory, MuscleGroup } from '../src/generated/prisma/client.js';
 import { getPrismaClient } from '../src/db/prisma.js';
 
 const exercises: Array<{
   slug: string;
   name: string;
   muscleGroups: MuscleGroup[];
+  category?: ExerciseCategory;
 }> = [
   { slug: 'press-banca', name: 'Press de banca', muscleGroups: [MuscleGroup.CHEST] },
   { slug: 'press-banca-inclinado', name: 'Press de banca inclinado', muscleGroups: [MuscleGroup.CHEST] },
@@ -36,9 +37,9 @@ const exercises: Array<{
   { slug: 'hiperextensiones', name: 'Hiperextensiones', muscleGroups: [MuscleGroup.BACK, MuscleGroup.GLUTES] },
   { slug: 'face-pull', name: 'Face pull', muscleGroups: [MuscleGroup.BACK, MuscleGroup.SHOULDERS] },
   { slug: 'curl-barra', name: 'Curl de bíceps con barra', muscleGroups: [MuscleGroup.BICEPS] },
-  { slug: 'curl-barra-z', name: 'Curl con barra Z', muscleGroups: [MuscleGroup.BICEPS] },
+  { slug: 'curl-barra-z', name: 'Curl de bíceps con barra Z', muscleGroups: [MuscleGroup.BICEPS] },
   { slug: 'curl-mancuernas', name: 'Curl alterno con mancuernas', muscleGroups: [MuscleGroup.BICEPS] },
-  { slug: 'curl-inclinado', name: 'Curl inclinado con mancuernas', muscleGroups: [MuscleGroup.BICEPS] },
+  { slug: 'curl-inclinado', name: 'Curl en banco inclinado', muscleGroups: [MuscleGroup.BICEPS] },
   { slug: 'curl-martillo', name: 'Curl martillo', muscleGroups: [MuscleGroup.BICEPS] },
   { slug: 'curl-predicador', name: 'Curl predicador', muscleGroups: [MuscleGroup.BICEPS] },
   { slug: 'curl-polea', name: 'Curl de bíceps en polea', muscleGroups: [MuscleGroup.BICEPS] },
@@ -65,6 +66,7 @@ const exercises: Array<{
   { slug: 'gemelos-sentado', name: 'Elevación de gemelos sentado', muscleGroups: [MuscleGroup.LEGS] },
   { slug: 'gemelos-prensa', name: 'Elevación de gemelos en prensa', muscleGroups: [MuscleGroup.LEGS] },
   { slug: 'press-militar', name: 'Press militar', muscleGroups: [MuscleGroup.SHOULDERS] },
+  { slug: 'press-militar-maquina', name: 'Press militar en máquina', muscleGroups: [MuscleGroup.SHOULDERS] },
   { slug: 'press-hombros-mancuernas', name: 'Press de hombros con mancuernas', muscleGroups: [MuscleGroup.SHOULDERS] },
   { slug: 'press-arnold', name: 'Press Arnold', muscleGroups: [MuscleGroup.SHOULDERS] },
   { slug: 'elevacion-lateral', name: 'Elevación lateral', muscleGroups: [MuscleGroup.SHOULDERS] },
@@ -99,6 +101,22 @@ const exercises: Array<{
   { slug: 'dead-bug', name: 'Dead bug', muscleGroups: [MuscleGroup.CORE] },
   { slug: 'pallof-press', name: 'Pallof press', muscleGroups: [MuscleGroup.CORE] },
   { slug: 'giros-rusos', name: 'Giros rusos', muscleGroups: [MuscleGroup.CORE] },
+  { slug: 'cinta-caminar', name: 'Caminar en cinta', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'cinta-caminar-inclinada', name: 'Caminar en cinta con inclinación', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'cinta-correr', name: 'Correr en cinta', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'sprints-cinta', name: 'Intervalos de sprint en cinta', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'bicicleta-estatica', name: 'Bicicleta estática', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'bicicleta-reclinada', name: 'Bicicleta reclinada', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'bicicleta-spinning', name: 'Ciclismo indoor (spinning)', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'eliptica', name: 'Elíptica', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'remo-ergometro', name: 'Remo en ergómetro', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'escaladora', name: 'Escaladora', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'stepper', name: 'Stepper', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'bicicleta-aire', name: 'Bicicleta de aire', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'ski-erg', name: 'Ski erg', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'saltar-cuerda', name: 'Saltar a la cuerda', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'cuerdas-batalla', name: 'Cuerdas de batalla', muscleGroups: [], category: ExerciseCategory.CARDIO },
+  { slug: 'empuje-trineo', name: 'Empuje de trineo', muscleGroups: [], category: ExerciseCategory.CARDIO },
 ];
 
 const prisma = getPrismaClient();
@@ -110,12 +128,14 @@ try {
       create: {
         slug: exercise.slug,
         name: exercise.name,
+        ...(exercise.category && { category: exercise.category }),
         muscleGroups: {
           create: exercise.muscleGroups.map((muscleGroup) => ({ muscleGroup })),
         },
       },
       update: {
         name: exercise.name,
+        ...(exercise.category && { category: exercise.category }),
         muscleGroups: {
           deleteMany: {},
           create: exercise.muscleGroups.map((muscleGroup) => ({ muscleGroup })),

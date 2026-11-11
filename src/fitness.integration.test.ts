@@ -66,6 +66,38 @@ describe('Fitness API integration', () => {
       ),
     );
 
+    const cardioCatalog = await owner.get('/api/v1/exercises?category=CARDIO');
+    assert.equal(cardioCatalog.status, 200);
+    assert.ok(cardioCatalog.body.length > 0);
+    assert.ok(
+      cardioCatalog.body.every(
+        (exercise: { category: string; muscleGroups: string[] }) =>
+          exercise.category === 'CARDIO' && exercise.muscleGroups.length === 0,
+      ),
+    );
+    assert.ok(
+      cardioCatalog.body.some(
+        (exercise: { slug: string }) => exercise.slug === 'remo-ergometro',
+      ),
+    );
+
+    const newExercises = await owner.get('/api/v1/exercises?q=barra Z');
+    assert.ok(
+      newExercises.body.some(
+        (exercise: { name: string }) =>
+          exercise.name === 'Curl de bíceps con barra Z',
+      ),
+    );
+    const machinePress = await owner.get(
+      '/api/v1/exercises?q=Press militar en máquina',
+    );
+    assert.ok(
+      machinePress.body.some(
+        (exercise: { slug: string }) =>
+          exercise.slug === 'press-militar-maquina',
+      ),
+    );
+
     const exercise = catalog.body[0] as { id: string };
     const routineResponse = await owner.post('/api/v1/routines').send({
       name: 'Rutina de integración',

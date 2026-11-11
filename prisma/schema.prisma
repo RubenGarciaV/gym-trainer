@@ -95,10 +95,16 @@ enum MuscleGroup {
   SHOULDERS
 }
 
+enum ExerciseCategory {
+  STRENGTH
+  CARDIO
+}
+
 model Exercise {
   id               String                @id @default(cuid())
   slug             String                @unique
   name             String
+  category         ExerciseCategory       @default(STRENGTH)
   description      String?
   muscleGroups     ExerciseMuscleGroup[]
   routineExercises RoutineExercise[]

@@ -1,4 +1,4 @@
-import { MuscleGroup, Prisma } from '../generated/prisma/client.js';
+import { ExerciseCategory, MuscleGroup, Prisma } from '../generated/prisma/client.js';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { getPrismaClient } from '../db/prisma.js';
@@ -21,6 +21,7 @@ fitnessRouter.use(
 
 const prisma = getPrismaClient();
 const muscleGroupSchema = z.nativeEnum(MuscleGroup);
+const exerciseCategorySchema = z.nativeEnum(ExerciseCategory);
 const idSchema = z.string().trim().min(1).max(128);
 const nameSchema = z.string().trim().min(1).max(100);
 const weightSchema = z.number().finite().min(0).max(99999.99);
@@ -239,6 +240,7 @@ function mapRoutine<T extends {
 fitnessRouter.get('/exercises', async (request, response) => {
   const querySchema = z.object({
     muscleGroup: muscleGroupSchema.optional(),
+    category: exerciseCategorySchema.optional(),
     q: z.string().trim().min(1).max(100).optional(),
   });
   const query = querySchema.safeParse(request.query);
@@ -262,6 +264,7 @@ fitnessRouter.get('/exercises', async (request, response) => {
       ...(query.data.muscleGroup && {
         muscleGroups: { some: { muscleGroup: query.data.muscleGroup } },
       }),
+      ...(query.data.category && { category: query.data.category }),
       ...(query.data.q && {
         name: { contains: query.data.q, mode: 'insensitive' },
       }),
